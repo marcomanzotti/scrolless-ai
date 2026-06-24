@@ -20,8 +20,10 @@ struct DemoHomeView: View {
         }
         // ▼▼▼ This overlay is the reusable piece for the real app ▼▼▼
         .overlay(alignment: .bottomTrailing) {
-            ChatButton(showChat: $showChat)
-                .padding(.trailing, 20).padding(.bottom, 24)
+            if !showChat {
+                ChatButton(showChat: $showChat)
+                    .padding(.trailing, 20).padding(.bottom, 24)
+            }
         }
         // ▲▲▲
         .sheet(isPresented: $showChat) {

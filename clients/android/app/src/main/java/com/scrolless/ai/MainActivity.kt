@@ -85,11 +85,13 @@ fun DemoHome() {
         )
 
         // ▼ Reusable floating chat button (drop this into the real app) ▼
-        FloatingActionButton(
-            onClick = { showChat = true },
-            containerColor = Theme.Dark, contentColor = Theme.Peach,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)
-        ) { Text("💬", fontSize = 22.sp) }
+        if (!showChat) {
+            FloatingActionButton(
+                onClick = { showChat = true },
+                containerColor = Theme.Dark, contentColor = Theme.Peach,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)
+            ) { Text("💬", fontSize = 22.sp) }
+        }
         // ▲
 
         if (showChat) ChatSheet(onClose = { showChat = false })

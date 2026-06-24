@@ -30,6 +30,7 @@
       display:flex;align-items:center;justify-content:center;z-index:99999;transition:transform .2s ease;
       border:1px solid ${C.slateLight}}
     .sl-fab:hover{transform:scale(1.06)}
+    .sl-fab.sl-hidden{display:none}
     .sl-fab svg{width:28px;height:28px}
     .sl-panel{position:fixed;bottom:96px;right:24px;width:360px;max-width:calc(100vw - 32px);height:520px;
       max-height:calc(100vh - 120px);background:${C.slate};border:1px solid ${C.slateLight};border-radius:18px;
@@ -121,7 +122,9 @@
 
   function togglePanel() {
     panel.classList.toggle("sl-open");
-    if (!opened && panel.classList.contains("sl-open")) {
+    const isOpen = panel.classList.contains("sl-open");
+    fab.classList.toggle("sl-hidden", isOpen); // hide the bubble while the panel is open
+    if (!opened && isOpen) {
       opened = true;
       addMsg("assistant", "Hi! I'm Scrolless AI. Ask me about pricing, how the app works, privacy, or troubleshooting. 👋");
       input.focus();
