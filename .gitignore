@@ -1,0 +1,23 @@
+# SECRETS — never commit. The API key lives ONLY on your machine / the server's env.
+.env
+.env.local
+*.key
+
+# Node
+node_modules/
+npm-debug.log*
+
+# macOS
+.DS_Store
+
+# iOS / Xcode
+clients/ios/**/xcuserdata/
+clients/ios/**/*.xcuserstate
+clients/ios/**/DerivedData/
+
+# Android
+clients/android/.gradle/
+clients/android/local.properties
+clients/android/**/build/
+clients/android/.idea/
+*.iml

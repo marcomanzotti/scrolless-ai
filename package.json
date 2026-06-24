@@ -1,0 +1,13 @@
+{
+  "name": "scrolless-ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Prototipo widget chat AI di supporto clienti per Scrolless (Claude Haiku + FAQ).",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.40.0"
+  }
+}
