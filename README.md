@@ -5,8 +5,12 @@ using the site's **real FAQ** as its knowledge base. One shared backend, three c
 (**Web · iOS · Android**).
 
 - **Model:** Claude Haiku 4.5 (fast, low cost)
-- **Knowledge base:** the 18 real FAQ entries, injected into the system prompt
+- **Knowledge base:** the 18 real FAQ entries from [scrolless.com/faq](https://www.scrolless.com/faq),
+  verified against the live page and injected into the system prompt
   (with prompt caching, so the FAQ cost ~0.1× after the first request)
+- **Look & feel:** colors sampled directly from a real scrolless.com screenshot
+  (dark slate background, warm peach/amber accent) — same palette across web,
+  iOS, and Android. The demo also uses that screenshot as a live background.
 - **Security:** the Anthropic API key is **never** in this repo or in any client.
   It lives only on the server (production) or in a local `.env` file (your demo).
 
@@ -37,6 +41,7 @@ scrolless-ai/
 │   └── faq.js         # Knowledge base: the 18 real FAQ entries
 ├── clients/
 │   ├── web/           # Embeddable web widget (bottom-right bubble)
+│   │   └── assets/hero-background.png  # real scrolless.com screenshot, used as demo background
 │   ├── ios/           # Native SwiftUI app  (see clients/ios/README.md)
 │   └── android/       # Native Compose app  (see clients/android/README.md)
 ├── server.js          # Local server for the demo (serves web + /api/chat)
@@ -62,9 +67,10 @@ The same `/api/chat` endpoint serves all three clients. The key is never exposed
 
 ## Local demo (for your boss)
 
-A one-click demo on macOS: it opens **Safari** on a page that looks like the
-Scrolless site, with a **fully working** chat — so you can show how it'd look live.
-This uses your key locally and never touches the public repo.
+A one-click demo on macOS: it opens **Safari** on a page that uses a real
+screenshot of the Scrolless site as its background, with a **fully working**
+chat on top — so you can show exactly how it'd look live. This uses your key
+locally and never touches the public repo.
 
 1. **Double-click `Demo (double-click).command`** in Finder.
    - On the **first run** it asks for your Anthropic API key and saves it
@@ -87,7 +93,8 @@ Drop-in widget. One line on any page:
 <script src="scrolless-widget.js" data-api="https://<backend>/api/chat"></script>
 ```
 Renders a bubble in the bottom-right that opens the chat. UI matches the
-Scrolless palette (cream / brown / tan).
+real Scrolless palette — dark slate background, warm peach/amber accent —
+sampled from an actual screenshot of the site.
 
 ### iOS — `clients/ios/` (SwiftUI)
 A floating chat button that opens a native chat screen calling `/api/chat`.
@@ -131,3 +138,9 @@ typical conversation costs a fraction of a cent. For a demo: negligible.
 Only once the FAQ grow to hundreds of entries: replace `api/faq.js` with
 embeddings + semantic search and inject only the top few relevant chunks. With
 18 FAQ, putting them all in the prompt is the right call.
+
+## Keeping the FAQ in sync
+
+`api/faq.js` was verified word-for-word against
+[scrolless.com/faq](https://www.scrolless.com/faq). If Scrolless updates that
+page, re-check this file against it and update the entries that changed.

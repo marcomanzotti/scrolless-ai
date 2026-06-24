@@ -8,10 +8,11 @@ lives only on the server.
 
 | File | Purpose |
 |------|---------|
-| `app/src/main/java/com/scrolless/ai/MainActivity.kt` | Mock home + reusable FAB + chat UI |
+| `app/src/main/java/com/scrolless/ai/MainActivity.kt` | Demo home (real scrolless.com screenshot as background) + reusable FAB + chat UI + color palette |
 | `app/src/main/java/com/scrolless/ai/ChatService.kt` | Networking to `/api/chat` (set the URL here) |
 | `app/src/main/AndroidManifest.xml` | Internet permission + cleartext config |
 | `app/src/main/res/xml/network_security_config.xml` | Allows HTTP to the local backend (demo only) |
+| `app/src/main/res/drawable/hero_background.png` | The real scrolless.com hero screenshot, used as the demo background |
 | `build.gradle.kts`, `settings.gradle.kts`, `app/build.gradle.kts` | Gradle build |
 
 ## Open in Android Studio
@@ -35,4 +36,9 @@ Edit `ChatService.kt` → `Config.CHAT_ENDPOINT`:
 
 Reuse the `FloatingActionButton` block and the `ChatSheet` / `Bubble` composables
 from `MainActivity.kt`, plus `ChatService.kt`. Add `INTERNET` permission to your
-manifest. In production you can delete `network_security_config.xml` (HTTPS).
+manifest. In production you can delete `network_security_config.xml` (HTTPS) and
+the `hero_background.png` drawable (only used for this demo's mock home screen).
+
+> `hero_background.png` is a single ~3 MB image with no density variants —
+> fine for this demo, but for production provide proper `drawable-*dpi` variants
+> or switch to a `Coil`/`Glide`-loaded remote image.

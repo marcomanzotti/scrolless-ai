@@ -21,7 +21,10 @@ if (fs.existsSync(envPath)) {
 const { default: chatHandler } = await import("./api/chat.js");
 
 const WEB = path.join(__dirname, "clients", "web");
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css" };
+const TYPES = {
+  ".html": "text/html", ".js": "text/javascript", ".css": "text/css",
+  ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml",
+};
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");

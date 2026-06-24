@@ -3,6 +3,7 @@ package com.scrolless.ai
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -16,7 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,13 +27,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
-// Scrolless palette (cream / brown / tan)
+// Palette sampled from the real scrolless.com hero screenshot:
+// dark slate background with a warm peach/amber glow.
 object Theme {
-    val Cream = Color(0xFFF4F1EA)
-    val Brown = Color(0xFF5A4632)
-    val Tan = Color(0xFFC8A57E)
-    val TextC = Color(0xFF3A2E22)
-    val Border = Color(0xFFE2DACB)
+    val Dark = Color(0xFF1A1A1D)        // navbar / header
+    val Slate = Color(0xFF2E323B)       // panel background
+    val SlateLight = Color(0xFF3D424D)  // borders
+    val Peach = Color(0xFFD89A6E)       // warm accent
+    val PeachDark = Color(0xFFC77B52)   // accent pressed
+    val TextC = Color(0xFFF5F2EE)       // light text
+    val TextDim = Color(0xFFC9C6C2)     // secondary text
 }
 
 class ChatViewModel : ViewModel() {
@@ -69,24 +74,20 @@ class MainActivity : ComponentActivity() {
 fun DemoHome() {
     var showChat by remember { mutableStateOf(false) }
 
-    Box(Modifier.fillMaxSize().background(Theme.Cream)) {
-        // Mock Scrolless home
-        Column(
-            Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Box(Modifier.size(16.dp).clip(CircleShape).background(Theme.Tan))
-            Spacer(Modifier.height(12.dp))
-            Text("Scrolless", color = Theme.Brown, fontSize = 22.sp)
-            Spacer(Modifier.height(10.dp))
-            Text("Your digital life, balanced.\nVision protected.",
-                color = Theme.TextC, fontSize = 16.sp, textAlign = TextAlign.Center)
-        }
+    Box(Modifier.fillMaxSize()) {
+        // Real scrolless.com hero screenshot as a full-bleed background —
+        // shows exactly how the chat would look live on the site.
+        Image(
+            painter = painterResource(id = R.drawable.hero_background),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
 
         // ▼ Reusable floating chat button (drop this into the real app) ▼
         FloatingActionButton(
             onClick = { showChat = true },
-            containerColor = Theme.Brown, contentColor = Theme.Cream,
+            containerColor = Theme.Dark, contentColor = Theme.Peach,
             modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)
         ) { Text("💬", fontSize = 22.sp) }
         // ▲
@@ -98,18 +99,18 @@ fun DemoHome() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatSheet(onClose: () -> Unit, vm: ChatViewModel = viewModel()) {
-    ModalBottomSheet(onDismissRequest = onClose, containerColor = Theme.Cream) {
+    ModalBottomSheet(onDismissRequest = onClose, containerColor = Theme.Slate) {
         Column(Modifier.fillMaxWidth().heightIn(min = 480.dp)) {
             // Header
             Row(
-                Modifier.fillMaxWidth().background(Theme.Brown).padding(16.dp),
+                Modifier.fillMaxWidth().background(Theme.Dark).padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(Modifier.size(8.dp).clip(CircleShape).background(Theme.Tan))
+                Box(Modifier.size(8.dp).clip(CircleShape).background(Theme.Peach))
                 Spacer(Modifier.width(10.dp))
                 Column {
-                    Text("Scrolless AI", color = Theme.Cream, fontSize = 15.sp)
-                    Text("Here to help with your eyes", color = Theme.Cream, fontSize = 12.sp)
+                    Text("Scrolless AI", color = Theme.TextC, fontSize = 15.sp)
+                    Text("Here to help with your eyes", color = Theme.TextDim, fontSize = 12.sp)
                 }
             }
 
@@ -121,7 +122,7 @@ fun ChatSheet(onClose: () -> Unit, vm: ChatViewModel = viewModel()) {
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 vm.messages.forEach { Bubble(it) }
-                if (vm.sending) Text("…", color = Theme.Tan, fontSize = 22.sp)
+                if (vm.sending) Text("…", color = Theme.Peach, fontSize = 22.sp)
             }
 
             // Input
@@ -132,9 +133,14 @@ fun ChatSheet(onClose: () -> Unit, vm: ChatViewModel = viewModel()) {
             ) {
                 OutlinedTextField(
                     value = input, onValueChange = { input = it },
-                    placeholder = { Text("Type your question…") },
+                    placeholder = { Text("Type your question…", color = Theme.TextDim) },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(22.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Theme.TextC, unfocusedTextColor = Theme.TextC,
+                        focusedContainerColor = Theme.Dark, unfocusedContainerColor = Theme.Dark,
+                        focusedBorderColor = Theme.Peach, unfocusedBorderColor = Theme.SlateLight
+                    ),
                     keyboardActions = KeyboardActions(onSend = { vm.send(input); input = "" }),
                     singleLine = true
                 )
@@ -142,7 +148,7 @@ fun ChatSheet(onClose: () -> Unit, vm: ChatViewModel = viewModel()) {
                 Button(
                     onClick = { vm.send(input); input = "" },
                     enabled = input.isNotBlank() && !vm.sending,
-                    colors = ButtonDefaults.buttonColors(containerColor = Theme.Tan),
+                    colors = ButtonDefaults.buttonColors(containerColor = Theme.Peach),
                     shape = CircleShape, contentPadding = PaddingValues(0.dp),
                     modifier = Modifier.size(48.dp)
                 ) { Text("→", fontSize = 18.sp, color = Color.White) }
@@ -160,10 +166,10 @@ fun Bubble(msg: ChatMessage) {
             Modifier
                 .widthIn(max = 280.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(if (isUser) Theme.Brown else Color.White)
+                .background(if (isUser) Theme.PeachDark else Theme.Dark)
                 .padding(horizontal = 13.dp, vertical = 10.dp)
         ) {
-            Text(msg.content, color = if (isUser) Theme.Cream else Theme.TextC, fontSize = 14.sp)
+            Text(msg.content, color = Color.White, fontSize = 14.sp)
         }
     }
 }

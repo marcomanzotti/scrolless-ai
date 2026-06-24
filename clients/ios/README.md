@@ -9,11 +9,12 @@ lives only on the server.
 | File | Purpose |
 |------|---------|
 | `ScrollessAIApp.swift` | App entry point |
-| `DemoHomeView.swift` | Mock home screen + the reusable `ChatButton` overlay |
+| `DemoHomeView.swift` | Demo home screen (real scrolless.com screenshot as background) + the reusable `ChatButton` overlay |
 | `ChatView.swift` | Native chat UI + view model |
 | `ChatService.swift` | Networking to `/api/chat` (set the URL here) |
-| `Theme.swift` | Scrolless palette (cream / brown / tan) |
+| `Theme.swift` | Color palette sampled from the real Scrolless site (dark slate + warm peach accent) |
 | `Info.plist` | Allows HTTP to localhost for the local demo |
+| `Assets.xcassets/HeroBackground.imageset/` | The real scrolless.com hero screenshot, used as the demo background |
 
 ## Open in Xcode
 
@@ -22,7 +23,8 @@ There is no `.xcodeproj` checked in (it's machine-specific). Create one in ~1 mi
 1. Xcode → **File ▸ New ▸ Project… ▸ App**. Product name `ScrollessAI`,
    Interface **SwiftUI**, Language **Swift**.
 2. Delete the auto-generated `ContentView.swift` and `…App.swift`.
-3. Drag the six files from this folder into the project (check *Copy items if needed*).
+3. Drag the files from this folder into the project — including the
+   `Assets.xcassets` folder — (check *Copy items if needed*).
 4. In the target's **Info** tab, add the `NSAppTransportSecurity` →
    `NSAllowsLocalNetworking = YES` key (or replace the generated Info.plist
    with the one here).
@@ -40,4 +42,5 @@ Edit `ChatService.swift` → `Config.chatEndpoint`:
 
 You only need the `.overlay { ChatButton(...) }` block from `DemoHomeView.swift`
 plus `ChatView.swift`, `ChatService.swift`, and `Theme.swift`. Drop the overlay
-on top of your existing root view.
+on top of your existing root view (you won't need the `HeroBackground` image —
+that's only used for this demo's mock home screen).

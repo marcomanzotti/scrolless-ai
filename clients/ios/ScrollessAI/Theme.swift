@@ -1,10 +1,13 @@
 import SwiftUI
 
-// Palette matching the Scrolless website (cream / brown / tan).
+// Palette sampled from the real scrolless.com hero screenshot:
+// dark slate background with a warm peach/amber glow.
 enum Theme {
-    static let cream  = Color(red: 0.957, green: 0.945, blue: 0.918) // #F4F1EA
-    static let brown  = Color(red: 0.353, green: 0.275, blue: 0.196) // #5A4632
-    static let tan    = Color(red: 0.784, green: 0.647, blue: 0.494) // #C8A57E
-    static let text   = Color(red: 0.227, green: 0.180, blue: 0.133) // #3A2E22
-    static let border = Color(red: 0.886, green: 0.855, blue: 0.796) // #E2DACB
+    static let dark        = Color(red: 0.102, green: 0.102, blue: 0.114) // #1A1A1D — navbar / header
+    static let slate       = Color(red: 0.180, green: 0.196, blue: 0.231) // #2E323B — panel background
+    static let slateLight  = Color(red: 0.239, green: 0.259, blue: 0.302) // #3D424D — borders
+    static let peach       = Color(red: 0.847, green: 0.604, blue: 0.431) // #D89A6E — warm accent
+    static let peachDark   = Color(red: 0.780, green: 0.482, blue: 0.322) // #C77B52 — accent pressed
+    static let text        = Color(red: 0.961, green: 0.949, blue: 0.933) // #F5F2EE — light text
+    static let textDim     = Color(red: 0.788, green: 0.776, blue: 0.761) // #C9C6C2 — secondary text
 }

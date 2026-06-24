@@ -1,30 +1,30 @@
-// Backend serverless per Scrolless AI.
-// Funziona su Vercel (cartella /api) o come handler generico (req, res).
-// La API key di Anthropic NON è mai esposta al browser: vive solo qui,
-// letta da process.env.ANTHROPIC_API_KEY.
+// Serverless backend for Scrolless AI.
+// Works on Vercel (api/ folder) or as a generic (req, res) handler.
+// The Anthropic API key is NEVER exposed to the browser: it only lives here,
+// read from process.env.ANTHROPIC_API_KEY.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { FAQ } from "./faq.js";
 
-const client = new Anthropic(); // legge ANTHROPIC_API_KEY dall'ambiente
+const client = new Anthropic(); // reads ANTHROPIC_API_KEY from the environment
 
-const SYSTEM_PROMPT = `Sei "Scrolless AI", l'assistente di supporto clienti di Scrolless, un'app iOS che protegge gli occhi dall'affaticamento digitale tramite pause di riposo basate sulla scienza.
+const SYSTEM_PROMPT = `You are "Scrolless AI", the customer-support assistant for Scrolless, an iOS app that protects users' eyes from digital strain through science-backed rest breaks.
 
-REGOLE:
-- Rispondi SOLO basandoti sulle FAQ qui sotto. È la tua unica fonte di verità.
-- Se la risposta non è nelle FAQ, dillo con onestà e invita a contattare info@scrolless.com (o il modulo di supporto). Non inventare funzionalità, prezzi o piattaforme.
-- Rispondi nella stessa lingua dell'utente (italiano o inglese).
-- Tono caldo, calmo e rassicurante, in linea con il brand wellness di Scrolless. Risposte brevi e dirette (2-4 frasi). Niente emoji eccessive.
-- Per problemi tecnici, dai i passaggi concreti dalle FAQ.
-- Scrolless è solo per iPhone al momento; non promettere Android/Mac/Windows.
-- Scrolless non gestisce rimborsi/cancellazioni: quelli passano da Apple.
+RULES:
+- Answer ONLY based on the FAQ below. It is your single source of truth.
+- If the answer isn't in the FAQ, say so honestly and point the user to info@scrolless.com (or the support form). Never invent features, prices, or platforms.
+- Reply in the same language the user writes in (e.g. English or Italian).
+- Tone: warm, calm, reassuring — consistent with Scrolless's wellness brand. Keep answers short and direct (2-4 sentences). No excessive emoji.
+- For technical issues, give the concrete steps from the FAQ.
+- Scrolless is iPhone-only for now; do not promise Android/Mac/Windows support.
+- Scrolless does not handle refunds/cancellations itself — those go through Apple.
 
-=== FAQ SCROLLESS ===
+=== SCROLLESS FAQ ===
 ${FAQ}
-=== FINE FAQ ===`;
+=== END FAQ ===`;
 
 export default async function handler(req, res) {
-  // CORS — per il prototipo permettiamo tutte le origini.
+  // CORS — open to all origins for the prototype.
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -38,11 +38,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "messages array required" });
     }
 
-    // Validazione minima: solo ruoli user/assistant, contenuto stringa.
+    // Minimal validation: only user/assistant roles, string content.
     const safeMessages = messages
       .filter((m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
       .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }))
-      .slice(-20); // teniamo solo gli ultimi 20 turni
+      .slice(-20); // keep only the last 20 turns
 
     if (safeMessages.length === 0 || safeMessages[safeMessages.length - 1].role !== "user") {
       return res.status(400).json({ error: "last message must be from user" });
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     const response = await client.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 512,
-      // cache_control sul system: dalla 2ª richiesta le FAQ costano ~0.1×.
+      // cache_control on system: from the 2nd request onward the FAQ cost ~0.1x.
       system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
       messages: safeMessages,
     });
@@ -60,9 +60,9 @@ export default async function handler(req, res) {
     return res.status(200).json({ reply });
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) {
-      return res.status(429).json({ error: "Troppe richieste, riprova tra poco." });
+      return res.status(429).json({ error: "Too many requests, please try again shortly." });
     }
     console.error("Scrolless AI error:", err);
-    return res.status(500).json({ error: "Errore interno. Riprova." });
+    return res.status(500).json({ error: "Internal error. Please try again." });
   }
 }

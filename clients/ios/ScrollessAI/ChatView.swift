@@ -37,19 +37,19 @@ struct ChatView: View {
         VStack(spacing: 0) {
             // Header
             HStack(spacing: 10) {
-                Circle().fill(Theme.tan).frame(width: 8, height: 8)
+                Circle().fill(Theme.peach).frame(width: 8, height: 8)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Scrolless AI").font(.system(size: 15, weight: .semibold))
-                    Text("Here to help with your eyes").font(.system(size: 12)).opacity(0.8)
+                    Text("Here to help with your eyes").font(.system(size: 12)).foregroundColor(Theme.textDim)
                 }
                 Spacer()
                 Button(action: onClose) {
                     Image(systemName: "xmark").font(.system(size: 16, weight: .semibold))
                 }
             }
-            .foregroundColor(Theme.cream)
+            .foregroundColor(Theme.text)
             .padding(16)
-            .background(Theme.brown)
+            .background(Theme.dark)
 
             // Messages
             ScrollViewReader { proxy in
@@ -68,30 +68,31 @@ struct ChatView: View {
                     if let last = vm.messages.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
                 }
             }
-            .background(Theme.cream)
+            .background(Theme.slate)
 
             // Input
             HStack(spacing: 8) {
                 TextField("Type your question…", text: $vm.input)
+                    .foregroundColor(Theme.text)
                     .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(Color.white)
-                    .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.border))
+                    .background(Theme.dark)
+                    .overlay(RoundedRectangle(cornerRadius: 22).stroke(Theme.slateLight))
                     .clipShape(RoundedRectangle(cornerRadius: 22))
                     .onSubmit { vm.send() }
                 Button(action: vm.send) {
                     Image(systemName: "paperplane.fill")
                         .foregroundColor(.white)
                         .frame(width: 40, height: 40)
-                        .background(Theme.tan)
+                        .background(Theme.peach)
                         .clipShape(Circle())
                 }
                 .disabled(vm.input.trimmingCharacters(in: .whitespaces).isEmpty || vm.isSending)
             }
             .padding(12)
-            .background(Theme.cream)
+            .background(Theme.slate)
         }
         .clipShape(RoundedRectangle(cornerRadius: 18))
-        .overlay(RoundedRectangle(cornerRadius: 18).stroke(Theme.border))
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(Theme.slateLight))
     }
 
     @ViewBuilder private func bubble(_ msg: ChatMessage) -> some View {
@@ -99,11 +100,11 @@ struct ChatView: View {
             if msg.role == .user { Spacer() }
             Text(msg.content)
                 .font(.system(size: 14))
-                .foregroundColor(msg.role == .user ? Theme.cream : Theme.text)
+                .foregroundColor(.white)
                 .padding(.horizontal, 13).padding(.vertical, 10)
-                .background(msg.role == .user ? Theme.brown : Color.white)
+                .background(msg.role == .user ? Theme.peachDark : Theme.dark)
                 .overlay(msg.role == .assistant ?
-                         RoundedRectangle(cornerRadius: 14).stroke(Theme.border) : nil)
+                         RoundedRectangle(cornerRadius: 14).stroke(Theme.slateLight) : nil)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
                 .frame(maxWidth: 260, alignment: msg.role == .user ? .trailing : .leading)
             if msg.role == .assistant { Spacer() }
@@ -117,12 +118,12 @@ struct TypingDots: View {
     var body: some View {
         HStack(spacing: 4) {
             ForEach(0..<3) { i in
-                Circle().fill(Theme.tan).frame(width: 7, height: 7)
+                Circle().fill(Theme.peach).frame(width: 7, height: 7)
                     .opacity(phase == Double(i) ? 1 : 0.4)
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(Color.white)
+        .background(Theme.dark)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .onAppear {
             Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { _ in
