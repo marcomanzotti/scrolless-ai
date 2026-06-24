@@ -1,9 +1,5 @@
 package com.scrolless.ai
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,14 +13,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 
 // Palette sampled from the real scrolless.com hero screenshot:
@@ -63,39 +57,26 @@ class ChatViewModel : ViewModel() {
     }
 }
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent { MaterialTheme { DemoHome() } }
-    }
-}
-
+// The floating action button that opens the chat. Drop this into your
+// screen's Box, alongside ChatSheet():
+//
+//   Box(Modifier.fillMaxSize()) {
+//       YourScreenContent()
+//       if (!showChat) {
+//           ChatButton(onClick = { showChat = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp))
+//       }
+//       if (showChat) ChatSheet(onClose = { showChat = false })
+//   }
+//
+// Hiding the button while showChat is true (and showing it again once the
+// sheet is dismissed) keeps it from floating behind the chat panel.
 @Composable
-fun DemoHome() {
-    var showChat by remember { mutableStateOf(false) }
-
-    Box(Modifier.fillMaxSize()) {
-        // Real scrolless.com hero screenshot as a full-bleed background —
-        // shows exactly how the chat would look live on the site.
-        Image(
-            painter = painterResource(id = R.drawable.hero_background),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-
-        // ▼ Reusable floating chat button (drop this into the real app) ▼
-        if (!showChat) {
-            FloatingActionButton(
-                onClick = { showChat = true },
-                containerColor = Theme.Dark, contentColor = Theme.Peach,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)
-            ) { Text("💬", fontSize = 22.sp) }
-        }
-        // ▲
-
-        if (showChat) ChatSheet(onClose = { showChat = false })
-    }
+fun ChatButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    FloatingActionButton(
+        onClick = onClick,
+        containerColor = Theme.Dark, contentColor = Theme.Peach,
+        modifier = modifier
+    ) { Text("💬", fontSize = 22.sp) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

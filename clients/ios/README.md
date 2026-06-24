@@ -1,46 +1,64 @@
-# Scrolless AI — iOS client (SwiftUI)
+# Scrolless AI — iOS plugin (SwiftUI)
 
-A minimal native app: a floating chat button that opens a native chat screen,
-calling the shared `/api/chat` backend. **No API key in this code** — the key
-lives only on the server.
+A small, self-contained chat widget for SwiftUI apps: a floating button that
+opens a native chat screen calling the shared `/api/chat` backend. **No API
+key in this code** — the key lives only on the server.
+
+This is **not** a standalone app — it's 4 files meant to be dropped into the
+real Scrolless iOS app.
 
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `ScrollessAIApp.swift` | App entry point |
-| `DemoHomeView.swift` | Demo home screen (real scrolless.com screenshot as background) + the reusable `ChatButton` overlay |
-| `ChatView.swift` | Native chat UI + view model |
-| `ChatService.swift` | Networking to `/api/chat` (set the URL here) |
-| `Theme.swift` | Color palette sampled from the real Scrolless site (dark slate + warm peach accent) |
-| `Info.plist` | Allows HTTP to localhost for the local demo |
-| `Assets.xcassets/HeroBackground.imageset/` | The real scrolless.com hero screenshot, used as the demo background |
+| `ChatButton.swift` | The floating action button. Drop its `.overlay` onto your root view. |
+| `ChatView.swift` | The chat screen (message list + input) and its view model. |
+| `ChatService.swift` | Networking to `/api/chat` — set the backend URL here. |
+| `Theme.swift` | Color palette sampled from the real Scrolless site (dark slate + warm peach accent). |
 
-## Open in Xcode
+## How to integrate
 
-There is no `.xcodeproj` checked in (it's machine-specific). Create one in ~1 minute:
+1. Copy the 4 `.swift` files into your Xcode project (drag the
+   `clients/ios/ScrollessAI/` folder in, check *Copy items if needed*).
+2. In `ChatService.swift`, set `Config.chatEndpoint` to your deployed backend:
+   ```swift
+   static let chatEndpoint = URL(string: "https://<scrolless-backend>/api/chat")!
+   ```
+3. On your root view, add the button + sheet:
+   ```swift
+   struct ContentView: View {
+       @State private var showChat = false
+       var body: some View {
+           YourExistingContent()
+               .overlay(alignment: .bottomTrailing) {
+                   if !showChat {
+                       ChatButton(showChat: $showChat)
+                           .padding(.trailing, 20).padding(.bottom, 24)
+                   }
+               }
+               .sheet(isPresented: $showChat) {
+                   ChatView(onClose: { showChat = false })
+                       .presentationDetents([.large])
+               }
+       }
+   }
+   ```
+   Hiding the button while `showChat` is `true` keeps it from floating
+   behind the open chat panel.
 
-1. Xcode → **File ▸ New ▸ Project… ▸ App**. Product name `ScrollessAI`,
-   Interface **SwiftUI**, Language **Swift**.
-2. Delete the auto-generated `ContentView.swift` and `…App.swift`.
-3. Drag the files from this folder into the project — including the
-   `Assets.xcassets` folder — (check *Copy items if needed*).
-4. In the target's **Info** tab, add the `NSAppTransportSecurity` →
-   `NSAllowsLocalNetworking = YES` key (or replace the generated Info.plist
-   with the one here).
-5. Run on the **iOS Simulator** (it reaches your Mac's `localhost` directly).
+## Local testing
 
-## Point it at the backend
+While testing against a backend running on your Mac (see the root
+[README](../../README.md) for `npm start`), point `Config.chatEndpoint` at
+`http://localhost:3000/api/chat` (Simulator) or your Mac's LAN IP (physical
+device), and add this to your app's `Info.plist` so iOS allows plain HTTP:
 
-Edit `ChatService.swift` → `Config.chatEndpoint`:
+```xml
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsLocalNetworking</key>
+    <true/>
+</dict>
+```
 
-- **Local demo, Simulator:** `http://localhost:3000/api/chat` (default)
-- **Local demo, physical device:** `http://<your-mac-LAN-IP>:3000/api/chat`
-- **Production:** `https://<scrolless-backend>/api/chat`
-
-## Integrate into the real Scrolless app
-
-You only need the `.overlay { ChatButton(...) }` block from `DemoHomeView.swift`
-plus `ChatView.swift`, `ChatService.swift`, and `Theme.swift`. Drop the overlay
-on top of your existing root view (you won't need the `HeroBackground` image —
-that's only used for this demo's mock home screen).
+Remove that exception once pointed at the production HTTPS backend.

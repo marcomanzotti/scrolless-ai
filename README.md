@@ -1,146 +1,151 @@
-# Scrolless AI — Customer-support chat prototype
+# Scrolless AI — Customer-support chat
 
-An AI customer-support chat for [Scrolless](https://www.scrolless.com) that answers
-using the site's **real FAQ** as its knowledge base. One shared backend, three clients
-(**Web · iOS · Android**).
+A customer-support chat prototype for [Scrolless](https://www.scrolless.com)
+(an iOS app for digital eye strain) that answers using the site's **real
+FAQ** as its knowledge base, powered by Claude Haiku 4.5.
 
-- **Model:** Claude Haiku 4.5 (fast, low cost)
-- **Knowledge base:** the 18 real FAQ entries from [scrolless.com/faq](https://www.scrolless.com/faq),
-  verified against the live page and injected into the system prompt
-  (with prompt caching, so the FAQ cost ~0.1× after the first request)
-- **Look & feel:** colors sampled directly from a real scrolless.com screenshot
-  (dark slate background, warm peach/amber accent) — same palette across web,
-  iOS, and Android. The demo also uses that screenshot as a live background.
-- **Security:** the Anthropic API key is **never** in this repo or in any client.
-  It lives only on the server (production) or in a local `.env` file (your demo).
+**This repo contains no API key, anywhere.** It's meant to be cloned, read,
+and deployed by the Scrolless team with their own Anthropic key.
 
 ---
 
-## ⚠️ About the API key (read this first)
-
-This repo is meant to be **public on GitHub with no key inside**, for the Scrolless
-IT team to deploy. The key is supplied at runtime via the `ANTHROPIC_API_KEY`
-environment variable:
-
-- **Production:** the IT team sets `ANTHROPIC_API_KEY` in the server's environment
-  (e.g. Vercel project settings). Clients only ever talk to `/api/chat`.
-- **Local demo (your machine):** you put the key in a `.env` file. **`.env` is
-  gitignored** — it never gets committed. See [Local demo](#local-demo-for-your-boss).
-
-`git` will refuse to track `.env` thanks to [`.gitignore`](.gitignore). Only
-`.env.example` (a placeholder, no real key) is committed.
-
----
-
-## Repository layout
+## What's in this repo
 
 ```
 scrolless-ai/
 ├── api/
-│   ├── chat.js        # Serverless backend — hides the key, calls Claude
-│   └── faq.js         # Knowledge base: the 18 real FAQ entries
+│   ├── chat.js          # The backend: the ONLY place that talks to Claude
+│   └── faq.js           # The knowledge base — Scrolless's real FAQ, as plain text
 ├── clients/
-│   ├── web/           # Embeddable web widget (bottom-right bubble)
-│   │   └── assets/hero-background.png  # real scrolless.com screenshot, used as demo background
-│   ├── ios/           # Native SwiftUI app  (see clients/ios/README.md)
-│   └── android/       # Native Compose app  (see clients/android/README.md)
-├── server.js          # Local server for the demo (serves web + /api/chat)
-├── Demo (double-click).command   # macOS one-click demo launcher
-├── .env.example       # Copy to .env and add your key (local only)
-└── .gitignore         # Ensures .env / node_modules are never committed
+│   ├── web/             # ✅ Runnable demo: a full page + the embeddable widget
+│   │   ├── index.html
+│   │   ├── scrolless-widget.js
+│   │   └── assets/hero-background.png
+│   ├── ios/              # 📋 SwiftUI plugin (4 files) — not a runnable app
+│   └── android/          # 📋 Compose plugin (2 files) — not a runnable app
+├── server.js             # Tiny local server, for trying the web demo on your machine
+├── package.json
+├── .env.example           # Copy to .env and add your key — .env is never committed
+└── .gitignore
 ```
+
+Three pieces, one backend:
+
+1. **The backend** (`api/`) — a single serverless function. It holds the
+   Scrolless FAQ in the system prompt and calls Claude. **The Anthropic API
+   key lives only here**, read from an environment variable. No client ever
+   sees it.
+2. **The web demo** (`clients/web/`) — a real, runnable page you can open in
+   a browser today. It's also the actual widget you'd embed on
+   scrolless.com — same files, no build step.
+3. **The iOS/Android plugins** (`clients/ios/`, `clients/android/`) — not
+   apps, just the handful of source files (a chat button + chat screen +
+   networking) meant to be copied into Scrolless's existing native apps.
+   See the README inside each folder.
 
 ---
 
 ## How it works
 
-1. A client (web widget, iOS, or Android app) sends the chat history to
-   `POST /api/chat`.
-2. The backend puts the FAQ in the **system prompt** (cached) and calls
-   **Claude Haiku 4.5**.
-3. Claude answers **only** from the FAQ; if it doesn't know, it points the user
-   to `info@scrolless.com`. It replies in the user's language (Italian or English).
+1. A client (the web widget, or the iOS/Android plugin) sends the
+   conversation so far to `POST /api/chat`.
+2. The backend ([`api/chat.js`](api/chat.js)) puts the FAQ
+   ([`api/faq.js`](api/faq.js)) into Claude's **system prompt**, with
+   [prompt caching](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
+   so repeated requests don't re-pay for the FAQ tokens.
+3. Claude (`claude-haiku-4-5`) answers **only** from the FAQ. If it doesn't
+   know, it says so and points to `info@scrolless.com`. It replies in
+   whatever language the user wrote in.
+4. The reply goes back to the client as `{ "reply": "..." }`.
 
-The same `/api/chat` endpoint serves all three clients. The key is never exposed.
-
----
-
-## Local demo (for your boss)
-
-A one-click demo on macOS: it opens **Safari** on a page that uses a real
-screenshot of the Scrolless site as its background, with a **fully working**
-chat on top — so you can show exactly how it'd look live. This uses your key
-locally and never touches the public repo.
-
-1. **Double-click `Demo (double-click).command`** in Finder.
-   - On the **first run** it asks for your Anthropic API key and saves it
-     locally to `.env` (gitignored — never uploaded). Next runs start straight away.
-   - It starts the local backend, waits for it to be ready,
-   - and opens Safari at `http://localhost:3000`.
-2. Click the chat bubble in the bottom-right and try it.
-3. Close the Terminal window to stop the demo.
-
-> First run installs dependencies automatically (needs [Node.js](https://nodejs.org) LTS).
-> Prefer the terminal? `npm install && npm start`, then open `http://localhost:3000`.
+The same endpoint serves every client — web, iOS, Android all just POST to
+`/api/chat`.
 
 ---
 
-## The three clients
+## How to make it work
 
-### Web — `clients/web/`
-Drop-in widget. One line on any page:
-```html
-<script src="scrolless-widget.js" data-api="https://<backend>/api/chat"></script>
+### 1. Try the web demo locally
+
+```bash
+cp .env.example .env        # then put your Anthropic key in .env
+npm install
+npm start                   # -> http://localhost:3000
 ```
-Renders a bubble in the bottom-right that opens the chat. UI matches the
-real Scrolless palette — dark slate background, warm peach/amber accent —
-sampled from an actual screenshot of the site.
 
-### iOS — `clients/ios/` (SwiftUI)
-A floating chat button that opens a native chat screen calling `/api/chat`.
-See [`clients/ios/README.md`](clients/ios/README.md) for opening it in Xcode and
-pointing it at the backend.
+`.env` is in `.gitignore` — it will never be committed. Open
+`http://localhost:3000`: it's the real widget, running against the real
+backend, with a screenshot of scrolless.com as the page so you can see how
+it'd look live.
 
-### Android — `clients/android/` (Kotlin + Jetpack Compose)
-Same as iOS, native to Android. See
-[`clients/android/README.md`](clients/android/README.md) for Android Studio setup.
+### 2. Deploy the backend (for production)
 
-**All three contain no API key** and talk only to `/api/chat`.
+`api/chat.js` is written as a standard `(req, res)` handler — it works as-is
+on **Vercel** (the `api/` folder convention):
 
----
-
-## Deploying the backend (for the Scrolless IT team)
-
-`api/chat.js` is a standard serverless handler.
-
-**Vercel (simplest):**
 1. Import this repo into Vercel.
-2. Add an env var `ANTHROPIC_API_KEY` = the Anthropic key.
-3. Deploy. The endpoint is then `https://<your-project>.vercel.app/api/chat`.
-4. Point each client's API URL at that endpoint:
-   - Web: `data-api="https://…/api/chat"`
-   - iOS: `Config.chatEndpoint` in `ChatService.swift`
-   - Android: `Config.CHAT_ENDPOINT` in `ChatService.kt`
+2. Add an environment variable `ANTHROPIC_API_KEY` with the real key, in the
+   Vercel project settings (never in code).
+3. Deploy. The endpoint is `https://<your-project>.vercel.app/api/chat`.
 
-Works on Netlify / Cloudflare with minor handler tweaks. CORS is open in the
-prototype — restrict `Access-Control-Allow-Origin` to the Scrolless domain in
-production.
+(Netlify or Cloudflare Workers work too, with minor handler-signature
+tweaks.) In production, also restrict
+`Access-Control-Allow-Origin` in `api/chat.js` to the Scrolless domain — it's
+open (`*`) here only for ease of prototyping.
+
+### 3. Embed the web widget on scrolless.com
+
+One line, anywhere on the page:
+
+```html
+<script src="scrolless-widget.js" data-api="https://<your-backend>/api/chat"></script>
+```
+
+It injects a floating chat button (bottom-right) and panel — no other
+markup needed. Palette is already matched to the site (dark slate +
+warm peach/amber accent).
+
+### 4. Add the chat to the iOS / Android apps
+
+See [`clients/ios/README.md`](clients/ios/README.md) and
+[`clients/android/README.md`](clients/android/README.md) — each explains
+exactly which files to copy in and which one line to change (the backend
+URL).
 
 ---
 
-## Cost (prototype estimate)
+## Security model
 
-Claude Haiku 4.5: $1 / 1M input tokens, $5 / 1M output. With the FAQ cached, a
-typical conversation costs a fraction of a cent. For a demo: negligible.
+- The Anthropic API key is **read from `process.env.ANTHROPIC_API_KEY`** in
+  exactly one file: [`api/chat.js`](api/chat.js#L9). It is never hardcoded,
+  never sent to a client, never logged.
+- `.env` (your real key, for local testing) is git-ignored — see
+  [`.gitignore`](.gitignore). Only [`.env.example`](.env.example), an empty
+  placeholder, is committed.
+- In production the key lives in your hosting provider's environment
+  variable settings (e.g. Vercel project settings) — never in a file at all.
+- Web/iOS/Android clients only ever talk to your own `/api/chat` endpoint.
+  They contain zero secrets and can be safely embedded in a public app or
+  website.
 
-## When to move to a real vector database
+---
 
-Only once the FAQ grow to hundreds of entries: replace `api/faq.js` with
-embeddings + semantic search and inject only the top few relevant chunks. With
-18 FAQ, putting them all in the prompt is the right call.
+## Cost
+
+Claude Haiku 4.5: $1 / 1M input tokens, $5 / 1M output. With the FAQ cached
+([`api/chat.js`](api/chat.js#L55)), a typical conversation costs a fraction
+of a cent.
 
 ## Keeping the FAQ in sync
 
-`api/faq.js` was verified word-for-word against
-[scrolless.com/faq](https://www.scrolless.com/faq). If Scrolless updates that
-page, re-check this file against it and update the entries that changed.
+[`api/faq.js`](api/faq.js) was checked word-for-word against
+[scrolless.com/faq](https://www.scrolless.com/faq). If that page changes,
+update this file to match — it's the model's only source of truth, so a
+stale FAQ means stale (or wrong) answers.
+
+## When to move to a real vector database
+
+Only once the FAQ grows to hundreds of entries: replace `api/faq.js` with
+embeddings + semantic search, and inject only the few most relevant chunks
+per question. With ~18 FAQ entries, putting all of them in the prompt (as
+done here) is simpler and just as accurate.
