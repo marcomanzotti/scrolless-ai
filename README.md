@@ -1,8 +1,9 @@
 # Scrolless AI — Customer-support chat
 
 A customer-support chat prototype for [Scrolless](https://www.scrolless.com)
-(an iOS app for digital eye strain) that answers using the site's **real
-FAQ** as its knowledge base, powered by Claude Haiku 4.5.
+(an iOS app for digital eye strain) that answers using a **RAG pipeline over a
+local vector database** built from Scrolless's official help-center documents,
+powered by Claude Haiku 4.5.
 
 **This repo contains no API key, anywhere.** It's meant to be cloned, read,
 and deployed by the Scrolless team with their own Anthropic key.
@@ -15,7 +16,13 @@ and deployed by the Scrolless team with their own Anthropic key.
 scrolless-ai/
 ├── api/
 │   ├── chat.js          # The backend: the ONLY place that talks to Claude
-│   └── faq.js           # The knowledge base — Scrolless's real FAQ, as plain text
+│   ├── rag.js           # Vector search: embeds the question, finds top passages
+│   └── embedder.js      # Local embeddings (Transformers.js, all-MiniLM-L6-v2)
+├── kb/
+│   ├── sources/         # Source documents (PDFs) — the input to the vector DB
+│   └── kb-vectors.json  # The vector database (committed; built from sources/)
+├── scripts/
+│   └── build-kb.mjs     # Builds kb-vectors.json from kb/sources/ (offline)
 ├── clients/
 │   ├── web/             # ✅ Runnable demo: a full page + the embeddable widget
 │   │   ├── index.html
@@ -31,10 +38,11 @@ scrolless-ai/
 
 Three pieces, one backend:
 
-1. **The backend** (`api/`) — a single serverless function. It holds the
-   Scrolless FAQ in the system prompt and calls Claude. **The Anthropic API
-   key lives only here**, read from an environment variable. No client ever
-   sees it.
+1. **The backend** (`api/`) — a single serverless function. For each question
+   it searches a local **vector database** (`kb/kb-vectors.json`) for the most
+   relevant passages, injects only those into Claude's prompt, and answers
+   strictly from them. **The Anthropic API key lives only here**, read from an
+   environment variable. No client ever sees it.
 2. **The web demo** (`clients/web/`) — a real, runnable page you can open in
    a browser today. It's also the actual widget you'd embed on
    scrolless.com — same files, no build step.
@@ -49,13 +57,15 @@ Three pieces, one backend:
 
 1. A client (the web widget, or the iOS/Android plugin) sends the
    conversation so far to `POST /api/chat`.
-2. The backend ([`api/chat.js`](api/chat.js)) puts the FAQ
-   ([`api/faq.js`](api/faq.js)) into Claude's **system prompt**, with
-   [prompt caching](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
-   so repeated requests don't re-pay for the FAQ tokens.
-3. Claude (`claude-haiku-4-5`) answers **only** from the FAQ. If it doesn't
-   know, it says so and points to `info@scrolless.com`. It replies in
-   whatever language the user wrote in.
+2. The backend ([`api/rag.js`](api/rag.js)) embeds the latest question with the
+   **same local model** used to build the vector DB, then ranks every stored
+   passage by cosine similarity and keeps the top matches. Off-topic questions
+   match nothing (filtered by a similarity threshold).
+3. [`api/chat.js`](api/chat.js) injects only those passages into Claude's
+   system prompt. Claude (`claude-haiku-4-5`) answers **precisely and only**
+   from them. If nothing relevant was found (or the passages don't contain the
+   answer), it tells the user to contact the Scrolless team at
+   `info@scrolless.com`. It replies in whatever language the user wrote in.
 4. The reply goes back to the client as `{ "reply": "..." }`.
 
 The same endpoint serves every client — web, iOS, Android all just POST to
@@ -70,8 +80,12 @@ The same endpoint serves every client — web, iOS, Android all just POST to
 ```bash
 cp .env.example .env        # then put your Anthropic key in .env
 npm install
+npm run build-kb            # builds the vector DB from kb/sources/ (offline, one-time)
 npm start                   # -> http://localhost:3000
 ```
+
+`npm run build-kb` is only needed if you change the source documents — the
+built `kb/kb-vectors.json` is committed, so a fresh clone runs without it.
 
 `.env` is in `.gitignore` — it will never be committed. Open
 `http://localhost:3000`: it's the real widget, running against the real
@@ -132,20 +146,22 @@ URL).
 
 ## Cost
 
-Claude Haiku 4.5: $1 / 1M input tokens, $5 / 1M output. With the FAQ cached
-([`api/chat.js`](api/chat.js#L55)), a typical conversation costs a fraction
-of a cent.
+Claude Haiku 4.5: $1 / 1M input tokens, $5 / 1M output. Because each question
+only injects the few most relevant passages (not the whole knowledge base), a
+typical conversation costs a fraction of a cent. Embeddings run locally, so
+they cost nothing.
 
-## Keeping the FAQ in sync
+## The vector database
 
-[`api/faq.js`](api/faq.js) was checked word-for-word against
-[scrolless.com/faq](https://www.scrolless.com/faq). If that page changes,
-update this file to match — it's the model's only source of truth, so a
-stale FAQ means stale (or wrong) answers.
-
-## When to move to a real vector database
-
-Only once the FAQ grows to hundreds of entries: replace `api/faq.js` with
-embeddings + semantic search, and inject only the few most relevant chunks
-per question. With ~18 FAQ entries, putting all of them in the prompt (as
-done here) is simpler and just as accurate.
+- **Sources** live in [`kb/sources/`](kb/sources/) — drop in PDFs.
+- **Build** with `npm run build-kb`: each PDF is extracted (locally, via
+  `pdf-parse`), split into one chunk per FAQ question, and embedded with
+  `all-MiniLM-L6-v2` (via [Transformers.js](https://github.com/xenova/transformers.js) —
+  runs on-device, **no embeddings API and no extra key**). The result is
+  written to [`kb/kb-vectors.json`](kb/kb-vectors.json).
+- **Add more documents** later by dropping another PDF into `kb/sources/` and
+  re-running `npm run build-kb`. This first document is just the start of the
+  knowledge base.
+- To tune retrieval, adjust `topK` / `minScore` in
+  [`api/rag.js`](api/rag.js) — a lower `minScore` retrieves more loosely; a
+  higher one makes the bot redirect to support more readily.

@@ -2,26 +2,35 @@
 // Works on Vercel (api/ folder) or as a generic (req, res) handler.
 // The Anthropic API key is NEVER exposed to the browser: it only lives here,
 // read from process.env.ANTHROPIC_API_KEY.
+//
+// This version is RAG-backed: for each question we search a local vector store
+// (built from the PDFs in kb/sources/) and answer ONLY from what we retrieve.
 
 import Anthropic from "@anthropic-ai/sdk";
-import { FAQ } from "./faq.js";
+import { retrieve, buildContext } from "./rag.js";
 
 const client = new Anthropic(); // reads ANTHROPIC_API_KEY from the environment
 
-const SYSTEM_PROMPT = `You are "Scrolless AI", the customer-support assistant for Scrolless, an iOS app that protects users' eyes from digital strain through science-backed rest breaks.
+const SUPPORT_EMAIL = "info@scrolless.com";
 
-RULES:
-- Answer ONLY based on the FAQ below. It is your single source of truth.
-- If the answer isn't in the FAQ, say so honestly and point the user to info@scrolless.com (or the support form). Never invent features, prices, or platforms.
+// The system prompt is assembled per-request with the retrieved context.
+function buildSystemPrompt(context) {
+  return `You are "Scrolless AI", the customer-support assistant for Scrolless, an iOS app that protects users' eyes from digital strain through science-backed rest breaks.
+
+You answer using ONLY the CONTEXT passages below, which were retrieved from Scrolless's official knowledge base for this specific question.
+
+RULES — follow them strictly:
+- Be precise. Base every claim strictly on the CONTEXT. Never invent, guess, generalize, or add features, prices, platforms, or steps that are not written in the CONTEXT.
+- If the CONTEXT does not clearly contain the answer, do NOT attempt an answer. Reply that you don't have that information and tell the user to contact the Scrolless team at ${SUPPORT_EMAIL}.
+- If the CONTEXT is empty, that means nothing relevant was found — again, direct the user to ${SUPPORT_EMAIL}.
 - Reply in the same language the user writes in (e.g. English or Italian).
 - Tone: warm, calm, reassuring — consistent with Scrolless's wellness brand. Keep answers short and direct (2-4 sentences). No excessive emoji.
-- For technical issues, give the concrete steps from the FAQ.
-- Scrolless is iPhone-only for now; do not promise Android/Mac/Windows support.
-- Scrolless does not handle refunds/cancellations itself — those go through Apple.
+- Do not mention the words "context", "passages", or "knowledge base" to the user — just answer naturally or redirect them.
 
-=== SCROLLESS FAQ ===
-${FAQ}
-=== END FAQ ===`;
+=== CONTEXT ===
+${context || "(no relevant information was found for this question)"}
+=== END CONTEXT ===`;
+}
 
 export default async function handler(req, res) {
   // CORS — open to all origins for the prototype.
@@ -48,11 +57,15 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "last message must be from user" });
     }
 
+    // --- RAG: retrieve the most relevant passages for the latest question ---
+    const question = safeMessages[safeMessages.length - 1].content;
+    const hits = await retrieve(question);
+    const context = buildContext(hits);
+
     const response = await client.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 512,
-      // cache_control on system: from the 2nd request onward the FAQ cost ~0.1x.
-      system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+      system: buildSystemPrompt(context),
       messages: safeMessages,
     });
 

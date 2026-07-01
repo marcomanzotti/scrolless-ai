@@ -32,8 +32,10 @@
     .sl-fab:hover{transform:scale(1.06)}
     .sl-fab.sl-hidden{display:none}
     .sl-fab svg{width:28px;height:28px}
-    .sl-panel{position:fixed;bottom:96px;right:24px;width:360px;max-width:calc(100vw - 32px);height:520px;
-      max-height:calc(100vh - 120px);background:${C.slate};border:1px solid ${C.slateLight};border-radius:18px;
+    /* The bubble hides while the panel is open, so the panel fills all the way
+       to the bottom of the page (top:24px → bottom:24px), leaving no dead space. */
+    .sl-panel{position:fixed;top:24px;bottom:24px;right:24px;width:380px;max-width:calc(100vw - 32px);
+      background:${C.slate};border:1px solid ${C.slateLight};border-radius:18px;
       box-shadow:0 20px 56px rgba(0,0,0,.5);display:none;flex-direction:column;overflow:hidden;z-index:99999;
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:${C.text}}
     .sl-panel.sl-open{display:flex;animation:sl-in .22s ease}
